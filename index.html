@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow - Quadro Principal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="auth-container" class="auth-container">
+        <div class="auth-box">
+            <h2 id="auth-title">Login</h2>
+            <form id="login-form">
+                <input type="email" id="login-email" placeholder="Email" required autocomplete="email">
+                <input type="password" id="login-password" placeholder="Senha" required autocomplete="current-password">
+                <button type="submit">Entrar</button>
+            </form>
+            <form id="register-form" class="hidden">
+                <input type="email" id="register-email" placeholder="Email" required autocomplete="email">
+                <input type="password" id="register-password" placeholder="Senha (mín. 6 caracteres)" required autocomplete="new-password">
+                <button type="submit">Registar</button>
+            </form>
+            <p id="auth-error" class="error-message"></p>
+            <button id="toggle-auth-mode" class="toggle-button">Não tem uma conta? Registe-se</button>
+        </div>
+    </div>
+
+    <div id="app-wrapper" class="app-wrapper hidden">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-content">
+                <h2 class="sidebar-title">Caixa de Entrada</h2>
+                <form id="inbox-form" class="inbox-form-container">
+                    <textarea id="inbox-title" placeholder="Título do cartão..." required class="form-input"></textarea>
+                    <textarea id="inbox-description" placeholder="Descrição (opcional)..." class="form-input"></textarea>
+                    <button type="submit">Adicionar Cartão</button>
+                </form>
+                <div class="sidebar-cards-container" id="inbox-cards-container"></div>
+            </div>
+        </aside>
+
+        <div class="resizer" id="resizer"></div>
+
+        <div class="main-content">
+            <header class="main-header">
+                <div class="header-left">
+                    <button id="toggle-sidebar-btn" class="toggle-sidebar-btn" title="Esconder/Mostrar barra lateral">«</button>
+                    <h1 id="dashboard-title" class="editable" contenteditable="true">Meu Quadro</h1>
+                </div>
+                <div class="header-controls">
+                    <div class="filter-container">
+                        <span>Filtrar:</span>
+                        <button class="filter-btn active" data-filter="all">Todos</button>
+                        <button class="filter-btn" data-filter="pendente">Pendente</button>
+                        <button class="filter-btn" data-filter="em-andamento">Em Andamento</button>
+                        <button class="filter-btn" data-filter="concluida">Concluída</button>
+                        <button class="filter-btn" data-filter="urgente">Urgente</button>
+                    </div>
+                    <div class="user-info">
+                        <span id="user-email-display"></span>
+                        <button id="nav-menu-btn" title="Navegar">⠿</button>
+                        <button id="logout-button">Sair</button>
+                    </div>
+                </div>
+            </header>
+            
+            <div id="nav-dropdown" class="nav-dropdown hidden">
+                <a href="index.html">Quadro Principal</a>
+                <a href="analise.html">Análise de Produtos</a>
+                <a href="produtos-finais.html">Produtos Finais</a>
+            </div>
+
+            <main class="board-container" id="boardContainer"></main>
+        </div>
+    </div>
+    
+    <div id="card-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+            <textarea id="modal-card-title-edit" class="modal-textarea-title"></textarea>
+            <p id="modal-card-list-name"></p>
+            <p class="modal-label">Status</p>
+            <div id="modal-status-options" class="status-options"></div>
+            <p class="modal-label">Descrição</p>
+            <textarea id="modal-card-description-edit" class="modal-textarea-desc"></textarea>
+            <div class="modal-actions">
+                <button id="save-modal-btn" class="save-button">Guardar Alterações</button>
+                <button id="delete-card-btn" class="delete-button">Excluir Cartão</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>

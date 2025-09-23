@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow - Análise de Produtos</title>
+    <link rel="stylesheet" href="style.css">
+    </head>
+<body>
+    <div id="app-wrapper" class="app-wrapper">
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-content">
+                <h2 class="sidebar-title">Novo Produto</h2>
+                <form id="new-product-form" class="inbox-form-container">
+                    <input type="text" id="product-name" placeholder="Nome do Produto" required class="form-input">
+                    <textarea id="product-desc" placeholder="Descrição" class="form-input" rows="4"></textarea>
+                    <input type="url" id="product-shopee-link" placeholder="Link da Shopee" class="form-input">
+                    <label for="product-drive-link" class="form-label">Link da Pasta do Drive:</label>
+                    <input type="url" id="product-drive-link" placeholder="Cole o link da pasta aqui..." required class="form-input">
+                    <button type="submit">Adicionar Produto</button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="main-content">
+            <header class="main-header">
+                <div class="header-left">
+                    <button id="toggle-sidebar-btn" class="toggle-sidebar-btn" title="Esconder/Mostrar barra lateral">«</button>
+                    <h1>Análise de Produtos</h1>
+                </div>
+                <div class="header-controls">
+                    <div class="user-info">
+                        <span id="user-email-display"></span>
+                        <button id="nav-menu-btn" title="Navegar">⠿</button>
+                        <button id="logout-button">Sair</button>
+                    </div>
+                </div>
+            </header>
+            
+            <div id="nav-dropdown" class="nav-dropdown hidden">
+                <a href="index.html">Quadro Principal</a>
+                <a href="analise.html">Análise de Produtos</a>
+                <a href="produtos-finais.html">Produtos Finais</a>
+            </div>
+            
+            <main class="board-container">
+                <div class="list" data-status-column="Pendente"><div class="list-header"><h3>Pendentes</h3></div><div class="cards-container" id="pendente-cards"></div></div>
+                <div class="list" data-status-column="Aprovado"><div class="list-header"><h3>Aprovados</h3></div><div class="cards-container" id="aprovado-cards"></div></div>
+                <div class="list" data-status-column="Reprovado"><div class="list-header"><h3>Reprovados</h3></div><div class="cards-container" id="reprovado-cards"></div></div>
+            </main>
+        </div>
+    </div>
+
+    <div id="product-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+            <h2 id="modal-product-name"></h2>
+            <p><strong>Link Shopee:</strong> <a id="modal-product-shopee-link" href="#" target="_blank" rel="noopener noreferrer">Visitar Link</a></p>
+            <p><strong>Link da Pasta:</strong> <a id="modal-product-drive-link" href="#" target="_blank" rel="noopener noreferrer">Abrir no Drive</a></p>
+            <p class="modal-label" style="margin-top: 1rem;">Descrição:</p>
+            <p id="modal-product-desc" style="white-space: pre-wrap;"></p>
+            <div id="modal-decision-buttons" class="modal-actions">
+                <button id="reprove-btn" class="delete-button">Reprovar</button>
+                <button id="approve-btn" class="save-button">Aprovar</button>
+            </div>
+            <div id="send-to-board-form" class="hidden" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <h4>Enviar para o Quadro Principal</h4>
+                <select id="board-lists-dropdown" class="form-input"></select>
+                <button id="send-to-board-btn" class="save-button" style="width: 100%;">Enviar Card</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="analise.js"></script>
+</body>
+</html>

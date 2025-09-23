@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow - Produtos Finais</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-wrapper" class="app-wrapper">
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-content">
+                <h2 class="sidebar-title">Adicionar Produto</h2>
+                <form id="new-final-product-form" class="inbox-form-container">
+                    <input type="text" id="final-name" placeholder="Nome do Produto" required class="form-input">
+                    <input type="url" id="final-drive-link" placeholder="Link da Pasta no Drive" required class="form-input">
+                    <input type="number" step="0.01" id="final-kg" placeholder="Peso (Kg)" class="form-input">
+                    <input type="text" id="final-dimensions" placeholder="Altura x Largura (cm)" class="form-input">
+                    <input type="text" id="final-material" placeholder="Material" class="form-input">
+                    <input type="text" id="final-colors" placeholder="Cores (separadas por vírgula)" class="form-input">
+                    <input type="number" step="0.01" id="final-cost" placeholder="Custo de Produção (R$)" class="form-input">
+                    <button type="submit">Salvar Produto Final</button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="main-content">
+            <header class="main-header">
+                 <div class="header-left">
+                    <button id="toggle-sidebar-btn" class="toggle-sidebar-btn" title="Esconder/Mostrar barra lateral">«</button>
+                    <h1>Produtos Finais</h1>
+                 </div>
+                 <div class="header-controls">
+                    <div class="user-info">
+                        <span id="user-email-display"></span>
+                        <button id="nav-menu-btn" title="Navegar">⠿</button>
+                        <button id="logout-button">Sair</button>
+                    </div>
+                </div>
+            </header>
+            <div id="nav-dropdown" class="nav-dropdown hidden">
+                 <a href="index.html">Quadro Principal</a>
+                 <a href="analise.html">Análise de Produtos</a>
+                 <a href="produtos-finais.html">Produtos Finais</a>
+            </div>
+
+            <main id="final-products-container" class="board-container" style="flex-wrap: wrap; align-content: flex-start;"></main>
+        </div>
+    </div>
+    
+    <div id="view-product-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2 id="view-final-name"></h2>
+            <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.8rem;">
+                <p><strong>Link da Pasta:</strong> <a id="view-final-drive-link" href="#" target="_blank">Abrir no Drive</a></p>
+                <p><strong>Custo:</strong> R$ <span id="view-final-cost"></span></p>
+                <p><strong>Peso:</strong> <span id="view-final-kg"></span> Kg</p>
+                <p><strong>Dimensões:</strong> <span id="view-final-dimensions"></span></p>
+                <p><strong>Material:</strong> <span id="view-final-material"></span></p>
+                <p><strong>Cores:</strong> <span id="view-final-colors"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-product-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Editar Produto Final</h2>
+            <form id="edit-product-form" style="margin-top: 1rem;">
+                <input type="text" id="edit-final-name" class="form-input">
+                <input type="url" id="edit-final-drive-link" class="form-input">
+                <input type="number" step="0.01" id="edit-final-kg" class="form-input">
+                <input type="text" id="edit-final-dimensions" class="form-input">
+                <input type="text" id="edit-final-material" class="form-input">
+                <input type="text" id="edit-final-colors" class="form-input">
+                <input type="number" step="0.01" id="edit-final-cost" class="form-input">
+                <div class="modal-actions">
+                    <button type="submit" id="save-edit-btn" class="save-button">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script type="module" src="produtos-finais.js"></script>
+</body>
+</html>
