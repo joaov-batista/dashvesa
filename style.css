@@ -171,3 +171,47 @@ body {
     color: var(--text-color);
     text-decoration: underline;
 }
+/* --- ESTILIZAÇÃO DA BARRA DE ROLAGEM (SCROLLBAR) --- */
+
+/* Para navegadores baseados em WebKit (Chrome, Edge, Safari) */
+
+/* Define a largura da barra de rolagem */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+/* O fundo (trilha) da barra de rolagem */
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2); /* Fundo escuro e sutil */
+    border-radius: 10px;
+}
+
+/* A alça arrastável da barra de rolagem */
+::-webkit-scrollbar-thumb {
+    background: var(--accent-color-darker); /* Roxo escuro do tema */
+    border-radius: 10px;
+    border: 2px solid transparent; /* Cria um preenchimento interno */
+    background-clip: content-box;
+    transition: background-color 0.2s;
+}
+
+/* Efeito ao passar o mouse sobre a alça */
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color); /* Roxo vibrante ao passar o mouse */
+    background-clip: content-box;
+    border: 2px solid transparent;
+}
+
+
+/* Para Firefox */
+
+/* Define a largura e as cores para o Firefox */
+/* Você precisa aplicar isso aos elementos que terão scroll. 
+   Vamos aplicar aos containers principais do seu app. */
+.main-content,
+.cards-container,
+.sidebar-cards-container {
+    scrollbar-width: thin; /* Pode ser 'auto', 'thin', ou 'none' */
+    scrollbar-color: var(--accent-color-darker) rgba(0, 0, 0, 0.2); /* Cor da alça e cor da trilha */
+}
