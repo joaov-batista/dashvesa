@@ -26,17 +26,13 @@ onAuthStateChanged(auth, user => {
         setupRealtimeListener();
         setupEventListeners();
         
-        const userEmailDisplay = document.getElementById('user-email-display');
-        const logoutButton = document.getElementById('logout-button');
-        if(userEmailDisplay) userEmailDisplay.textContent = user.email;
-        if(logoutButton) logoutButton.addEventListener('click', () => signOut(auth));
+        document.getElementById('user-email-display').textContent = user.email;
+        document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
 
         const navMenuBtn = document.getElementById('nav-menu-btn');
         const navDropdown = document.getElementById('nav-dropdown');
-        if (navMenuBtn && navDropdown) {
-            navMenuBtn.addEventListener('click', (e) => { e.stopPropagation(); navDropdown.classList.toggle('hidden'); });
-            document.addEventListener('click', () => { if (!navDropdown.classList.contains('hidden')) { navDropdown.classList.add('hidden'); } });
-        }
+        navMenuBtn.addEventListener('click', (e) => { e.stopPropagation(); navDropdown.classList.toggle('hidden'); });
+        document.addEventListener('click', () => { if (!navDropdown.classList.contains('hidden')) navDropdown.classList.add('hidden'); });
     } else { window.location.href = 'index.html'; }
 });
 
@@ -63,7 +59,6 @@ function createFinalProductCard(product) {
     card.className = 'list final-product-card';
     card.dataset.productId = product.id;
     card.addEventListener('click', () => openViewModal(product));
-
     card.innerHTML = `
         <div class="list-header"><h3>${product.name}</h3></div>
         <div style="padding: 1rem; font-size: 0.9rem; flex-grow: 1;">
@@ -84,12 +79,10 @@ function setupFormSubmit() {
         e.preventDefault();
         const name = form.querySelector('#final-name').value.trim();
         const driveLink = form.querySelector('#final-drive-link').value.trim();
-        
         if (!name || !driveLink) {
-            alert('Preencha o Nome e o Link do Drive.');
+            alert('Preencha o Nome e o Link da Pasta do Drive.');
             return;
         }
-
         await addDoc(finalProductsCollection, {
             name,
             driveLink,
@@ -114,7 +107,7 @@ function openViewModal(product) {
     document.getElementById('view-final-name').textContent = product.name;
     const driveLinkEl = document.getElementById('view-final-drive-link');
     driveLinkEl.href = product.driveLink;
-    driveLinkEl.textContent = product.driveLink;
+    driveLinkEl.textContent = "Abrir Link";
     document.getElementById('view-final-cost').textContent = product.cost || 'N/A';
     document.getElementById('view-final-kg').textContent = product.kg || 'N/A';
     document.getElementById('view-final-dimensions').textContent = product.dimensions || 'N/A';
@@ -126,11 +119,9 @@ function openViewModal(product) {
 async function openEditModal(productId) {
     const docRef = doc(db, 'final_products', productId);
     const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) { console.error("Produto não encontrado!"); return; }
-    
+    if (!docSnap.exists()) return;
     const product = docSnap.data();
     currentEditingProductId = productId;
-    
     editForm.querySelector('#edit-final-name').value = product.name;
     editForm.querySelector('#edit-final-drive-link').value = product.driveLink;
     editForm.querySelector('#edit-final-kg').value = product.kg || '';
@@ -138,14 +129,12 @@ async function openEditModal(productId) {
     editForm.querySelector('#edit-final-material').value = product.material || '';
     editForm.querySelector('#edit-final-colors').value = product.colors || '';
     editForm.querySelector('#edit-final-cost').value = product.cost || '';
-    
     editModal.classList.remove('hidden');
 }
 
 async function saveProductChanges(e) {
     e.preventDefault();
     if (!currentEditingProductId) return;
-
     const productRef = doc(db, 'final_products', currentEditingProductId);
     const updatedData = {
         name: editForm.querySelector('#edit-final-name').value.trim(),
@@ -156,11 +145,8 @@ async function saveProductChanges(e) {
         colors: editForm.querySelector('#edit-final-colors').value,
         cost: editForm.querySelector('#edit-final-cost').value,
     };
-
     await updateDoc(productRef, updatedData);
-    
     editModal.classList.add('hidden');
-    currentEditingProductId = null;
     alert('Produto atualizado com sucesso!');
 }
 
@@ -168,9 +154,7 @@ async function deleteFinalProduct(productId) {
     const docRef = doc(db, 'final_products', productId);
     const docSnap = await getDoc(docRef);
     const productName = docSnap.exists() ? docSnap.data().name : "este produto";
-
-    const confirmation = confirm(`Tem certeza que deseja excluir "${productName}"?`);
-    if (confirmation) {
+    if (confirm(`Tem certeza que deseja excluir "${productName}"?`)) {
         await deleteDoc(docRef);
     }
 }
@@ -179,7 +163,6 @@ function setupEventListeners() {
     finalProductsContainer.addEventListener('click', (e) => {
         const card = e.target.closest('.final-product-card');
         if (!card) return;
-        
         const productId = card.dataset.productId;
         if (e.target.classList.contains('edit-btn') || e.target.classList.contains('delete-btn')) {
             e.stopPropagation();
@@ -187,9 +170,7 @@ function setupEventListeners() {
             if (e.target.classList.contains('delete-btn')) { deleteFinalProduct(productId); }
         }
     });
-
     viewModal.querySelector('.modal-close-btn').addEventListener('click', () => viewModal.classList.add('hidden'));
     editModal.querySelector('.modal-close-btn').addEventListener('click', () => editModal.classList.add('hidden'));
-    
     editForm.addEventListener('submit', saveProductChanges);
 }
