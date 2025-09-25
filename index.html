@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TaskFlow - Quadro Principal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -60,6 +57,12 @@
                     </div>
                     <div class="user-info">
                         <span id="user-email-display"></span>
+                        <button id="obs-toggle-btn" title="Observações">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <div id="obs-notification-badge" class="hidden"></div>
+                        </button>
                         <button id="nav-menu-btn" title="Navegar">⠿</button>
                         <button id="logout-button">Sair</button>
                     </div>
@@ -79,6 +82,7 @@
     <div id="card-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+            <h2 id="modal-card-title">Título do Cartão</h2>
             <textarea id="modal-card-title-edit" class="modal-textarea-title"></textarea>
             <p id="modal-card-list-name"></p>
             <p class="modal-label">Status</p>
@@ -89,6 +93,20 @@
                 <button id="save-modal-btn" class="save-button">Guardar Alterações</button>
                 <button id="delete-card-btn" class="delete-button">Excluir Cartão</button>
             </div>
+        </div>
+    </div>
+    
+    <div id="observations-panel">
+        <div class="obs-content">
+            <div class="obs-header">
+                <h2 class="sidebar-title">Observações</h2>
+                <button id="obs-close-btn" class="modal-close-btn">&times;</button>
+            </div>
+            <div id="obs-list"></div>
+            <form id="obs-form">
+                <textarea id="obs-input" class="form-input" placeholder="Escreva uma observação..." rows="4" required></textarea>
+                <button type="submit">Enviar</button>
+            </form>
         </div>
     </div>
 
