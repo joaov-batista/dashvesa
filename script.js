@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, orderBy, writeBatch, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 // --- CONFIGURAÇÃO DO FIREBASE ---
 const firebaseConfig = {
@@ -34,6 +34,13 @@ const modal = document.getElementById('card-modal');
 const modalCloseBtn = document.getElementById('modal-close-btn');
 const saveModalBtn = document.getElementById('save-modal-btn');
 const deleteCardBtn = document.getElementById('delete-card-btn');
+const obsToggleBtn = document.getElementById('obs-toggle-btn');
+const obsPanel = document.getElementById('observations-panel');
+const obsNotificationBadge = document.getElementById('obs-notification-badge');
+const obsList = document.getElementById('obs-list');
+const obsForm = document.getElementById('obs-form');
+const obsInput = document.getElementById('obs-input');
+const obsCloseBtn = document.getElementById('obs-close-btn');
 
 // --- ESTADO LOCAL E CACHE ---
 let localState = JSON.parse(localStorage.getItem('taskflowLocalState')) || {
@@ -63,6 +70,7 @@ onAuthStateChanged(auth, user => {
         setupRealtimeListeners();
         sidebar.style.width = `${localState.sidebarWidth}px`;
         renderAll();
+        setupObservations(user);
 
         const navMenuBtn = document.getElementById('nav-menu-btn');
         const navDropdown = document.getElementById('nav-dropdown');
@@ -90,15 +98,19 @@ document.getElementById('register-form').addEventListener('submit', async e => {
 document.getElementById('toggle-auth-mode').addEventListener('click', () => { document.getElementById('login-form').classList.toggle('hidden'); document.getElementById('register-form').classList.toggle('hidden'); });
 logoutButton.addEventListener('click', () => signOut(auth));
 
+
+// --- LISTENERS DE DADOS EM TEMPO REAL ---
 let unsubscribeLists, unsubscribeCards;
 function setupRealtimeListeners() {
     if (unsubscribeLists) unsubscribeLists();
     if (unsubscribeCards) unsubscribeCards();
+
     const listsQuery = query(collection(db, 'lists'), orderBy('order'));
     unsubscribeLists = onSnapshot(listsQuery, listSnapshot => {
         cachedLists = listSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderAll();
     });
+
     const cardsQuery = query(collection(db, 'cards'));
     unsubscribeCards = onSnapshot(cardsQuery, cardSnapshot => {
         cachedCards = cardSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -106,6 +118,7 @@ function setupRealtimeListeners() {
     });
 }
 
+// --- RENDERIZAÇÃO GERAL ---
 function renderAll() {
     appWrapper.classList.toggle('sidebar-collapsed', localState.sidebarCollapsed);
     toggleSidebarBtn.textContent = localState.sidebarCollapsed ? '»' : '«';
@@ -126,12 +139,14 @@ function renderBoard() {
     boardContainer.appendChild(createAddListElement());
 }
 
+// --- CRIAÇÃO DE ELEMENTOS ---
 function createListElement(list, index) {
     const listEl = document.createElement('div');
     listEl.className = 'list';
     listEl.dataset.listId = list.id;
     listEl.dataset.color = listColors[index % listColors.length];
     listEl.draggable = true;
+    
     const header = document.createElement('div');
     header.className = 'list-header';
     const titleEl = document.createElement('h3');
@@ -142,9 +157,11 @@ function createListElement(list, index) {
     deleteBtn.className = 'delete-list-btn';
     deleteBtn.innerHTML = '&times;';
     header.append(titleEl, deleteBtn);
+    
     const cardsContainer = document.createElement('div');
     cardsContainer.className = 'cards-container';
     cachedCards.filter(c => c.listId === list.id).sort((a,b) => (a.order || 0) - (b.order || 0)).forEach(card => cardsContainer.appendChild(createCardElement(card)));
+    
     listEl.addEventListener('dragstart', e => { e.stopPropagation(); draggedItem = { listId: list.id, type: 'list' }; setTimeout(() => listEl.classList.add('dragging-list'), 0); });
     listEl.addEventListener('dragend', e => listEl.classList.remove('dragging-list'));
     listEl.addEventListener('dragover', e => { e.preventDefault(); e.currentTarget.classList.add('drag-over-list'); });
@@ -156,9 +173,11 @@ function createListElement(list, index) {
         if (draggedItem.type === 'list' && draggedItem.listId !== list.id) { reorderLists(draggedItem.listId, list.id); }
         else if (draggedItem.type === 'card' && draggedItem.listId !== list.id) { updateDoc(doc(db, 'cards', draggedItem.cardId), { listId: list.id }); }
     });
+
     titleEl.addEventListener('blur', () => updateDoc(doc(db, 'lists', list.id), { name: titleEl.textContent.trim() }));
     titleEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
     deleteBtn.addEventListener('click', () => deleteList(list.id));
+
     listEl.append(header, cardsContainer);
     return listEl;
 }
@@ -295,3 +314,132 @@ inboxForm.addEventListener('submit', async e => {
         inboxForm.reset();
     }
 });
+
+function setupObservations(user) {
+    const obsCollection = collection(db, 'observations');
+    const q = query(obsCollection, orderBy('timestamp', 'desc'));
+    onSnapshot(q, snapshot => {
+        obsList.innerHTML = '';
+        let hasUnread = false;
+        snapshot.forEach(doc => {
+            const obs = { id: doc.id, ...doc.data() };
+            obsList.appendChild(createObsItem(obs, user));
+            if (!obs.readBy || !obs.readBy.includes(user.uid)) {
+                hasUnread = true;
+            }
+        });
+        obsNotificationBadge.classList.toggle('hidden', !hasUnread);
+    });
+    obsToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        obsPanel.classList.toggle('open');
+        if (obsPanel.classList.contains('open')) {
+            markAllObsAsRead(user.uid);
+        }
+    });
+    obsCloseBtn.addEventListener('click', () => {
+        obsPanel.classList.remove('open');
+    });
+    obsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = obsInput.value.trim();
+        if (text) {
+            await addDoc(obsCollection, { text, author: user.email, uid: user.uid, timestamp: serverTimestamp(), readBy: [user.uid] });
+            obsInput.value = '';
+        }
+    });
+}
+
+function createObsItem(obs, user) {
+    const item = document.createElement('div');
+    item.className = 'obs-item';
+    item.dataset.id = obs.id;
+    const textEl = document.createElement('p');
+    textEl.textContent = obs.text;
+    const metaEl = document.createElement('div');
+    metaEl.className = 'obs-meta';
+    const date = obs.timestamp ? obs.timestamp.toDate().toLocaleString('pt-BR') : 'Enviando...';
+    metaEl.textContent = `Por: ${obs.author} - ${date}`;
+    item.append(textEl, metaEl);
+
+    if (user.uid === obs.uid) {
+        const actionsEl = document.createElement('div');
+        actionsEl.className = 'obs-actions';
+        const editBtn = document.createElement('button');
+        editBtn.className = 'obs-action-btn';
+        editBtn.textContent = 'Editar';
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'obs-action-btn delete';
+        deleteBtn.textContent = 'Excluir';
+        actionsEl.append(editBtn, deleteBtn);
+        item.appendChild(actionsEl);
+
+        deleteBtn.addEventListener('click', () => {
+            deleteObservation(obs.id);
+        });
+
+        editBtn.addEventListener('click', () => {
+            enterEditMode(item, textEl, actionsEl);
+        });
+    }
+    return item;
+}
+
+function enterEditMode(item, textEl, actionsEl) {
+    const originalText = textEl.textContent;
+    const editTextArea = document.createElement('textarea');
+    editTextArea.value = originalText;
+    editTextArea.className = 'form-input obs-edit-textarea';
+    editTextArea.rows = 4;
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Salvar';
+    saveBtn.className = 'obs-action-btn';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancelar';
+    cancelBtn.className = 'obs-action-btn delete';
+    const editActions = document.createElement('div');
+    editActions.className = 'obs-actions';
+    editActions.append(saveBtn, cancelBtn);
+
+    textEl.classList.add('hidden');
+    actionsEl.classList.add('hidden');
+    item.insertBefore(editTextArea, actionsEl);
+    item.insertBefore(editActions, actionsEl);
+
+    cancelBtn.addEventListener('click', () => {
+        item.removeChild(editTextArea);
+        item.removeChild(editActions);
+        textEl.classList.remove('hidden');
+        actionsEl.classList.remove('hidden');
+    });
+
+    saveBtn.addEventListener('click', async () => {
+        const newText = editTextArea.value.trim();
+        if (newText && newText !== originalText) {
+            const obsRef = doc(db, 'observations', item.dataset.id);
+            await updateDoc(obsRef, { text: newText });
+        }
+        cancelBtn.click();
+    });
+}
+
+async function deleteObservation(obsId) {
+    if (confirm("Tem certeza que deseja excluir esta observação?")) {
+        await deleteDoc(doc(db, 'observations', obsId));
+    }
+}
+
+async function markAllObsAsRead(userId) {
+    const obsCollection = collection(db, 'observations');
+    const q = query(obsCollection);
+    const snapshot = await getDocs(q);
+    const batch = writeBatch(db);
+    snapshot.forEach(doc => {
+        const obs = doc.data();
+        if (!obs.readBy || !obs.readBy.includes(userId)) {
+            const newReadBy = obs.readBy ? [...obs.readBy, userId] : [userId];
+            batch.update(doc.ref, { readBy: newReadBy });
+        }
+    });
+    await batch.commit();
+}
