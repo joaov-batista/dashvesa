@@ -182,13 +182,36 @@ async function populateBoardLists() {
     const listsSnapshot = await getDocs(q);
     listsSnapshot.forEach(doc => { dropdown.innerHTML += `<option value="${doc.id}">${doc.data().name}</option>`; });
 }
+
+// --- FUNÇÃO MODIFICADA ---
 async function sendCardToBoard() {
     if (!currentProduct) return;
     const selectedListId = document.getElementById('board-lists-dropdown').value;
-    if (!selectedListId) { alert('Selecione uma lista.'); return; }
-    await addDoc(collection(db, 'cards'), { text: currentProduct.name, description: currentProduct.description, listId: selectedListId, status: 'pendente', order: Date.now() });
-    alert('Card enviado para o quadro principal!');
-    closeProductModal();
+    if (!selectedListId) {
+        alert('Por favor, selecione uma lista para continuar.');
+        return;
+    }
+
+    try {
+        // Passo 1: Cria o novo card no quadro principal
+        await addDoc(collection(db, 'cards'), {
+            text: currentProduct.name,
+            description: currentProduct.description,
+            listId: selectedListId,
+            status: 'pendente',
+            order: Date.now()
+        });
+
+        // Passo 2 (NOVO): Apaga o produto original da lista de análise
+        await deleteDoc(doc(db, 'analysis_products', currentProduct.id));
+
+        alert('Produto enviado para o quadro principal e removido da análise!');
+        closeProductModal();
+
+    } catch (error) {
+        console.error("Erro ao enviar card para o quadro: ", error);
+        alert("Ocorreu um erro ao processar a solicitação.");
+    }
 }
 
 document.getElementById('modal-close-btn').addEventListener('click', closeProductModal);
