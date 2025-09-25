@@ -19,22 +19,19 @@ const analysisProductsCollection = collection(db, 'analysis_products');
 const mainListsCollection = collection(db, 'lists');
 const appWrapper = document.getElementById('app-wrapper');
 const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+let draggedProduct = null;
 
 onAuthStateChanged(auth, user => {
     if (user) {
         setupRealtimeListener();
         setupFormSubmit();
-        
         document.getElementById('user-email-display').textContent = user.email;
         document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
-
         const navMenuBtn = document.getElementById('nav-menu-btn');
         const navDropdown = document.getElementById('nav-dropdown');
         navMenuBtn.addEventListener('click', (e) => { e.stopPropagation(); navDropdown.classList.toggle('hidden'); });
         document.addEventListener('click', () => { if (!navDropdown.classList.contains('hidden')) navDropdown.classList.add('hidden'); });
-    } else {
-        window.location.href = 'index.html';
-    }
+    } else { window.location.href = 'index.html'; }
 });
 
 let sidebarCollapsed = false;
@@ -44,26 +41,89 @@ toggleSidebarBtn.addEventListener('click', () => {
     toggleSidebarBtn.textContent = sidebarCollapsed ? '»' : '«';
 });
 
+function setupRealtimeListener() {
+    const q = query(analysisProductsCollection, orderBy("createdAt", "desc"));
+    onSnapshot(q, snapshot => {
+        const containers = {
+            Pendente: document.getElementById('pendente-cards'),
+            Aprovado: document.getElementById('aprovado-cards'),
+            Reprovado: document.getElementById('reprovado-cards')
+        };
+        Object.values(containers).forEach(c => c.innerHTML = '');
+        snapshot.forEach(doc => {
+            const product = { id: doc.id, ...doc.data() };
+            const container = containers[product.status] || containers['Pendente'];
+            if(container) container.appendChild(createProductCard(product));
+        });
+    });
+
+    const columns = document.querySelectorAll('.list[data-status-column]');
+    columns.forEach(column => {
+        column.addEventListener('dragover', e => { e.preventDefault(); column.classList.add('drag-over-list'); });
+        column.addEventListener('dragleave', () => column.classList.remove('drag-over-list'));
+        column.addEventListener('drop', e => {
+            e.preventDefault();
+            column.classList.remove('drag-over-list');
+            const newStatus = column.dataset.statusColumn;
+            if (draggedProduct && draggedProduct.status !== newStatus) {
+                const productRef = doc(db, 'analysis_products', draggedProduct.id);
+                updateDoc(productRef, { status: newStatus });
+            }
+            draggedProduct = null;
+        });
+    });
+}
+
+function createProductCard(product) {
+    const cardEl = document.createElement('div');
+    cardEl.className = 'card';
+    cardEl.draggable = true;
+    cardEl.style.position = 'relative';
+    
+    cardEl.addEventListener('dragstart', () => {
+        draggedProduct = product;
+        setTimeout(() => cardEl.classList.add('dragging'), 0);
+    });
+    cardEl.addEventListener('dragend', () => {
+        draggedProduct = null;
+        cardEl.classList.remove('dragging');
+    });
+
+    cardEl.addEventListener('click', () => openProductModal(product));
+    
+    const titleEl = document.createElement('span');
+    titleEl.textContent = product.name;
+    
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'card-delete-btn';
+    deleteBtn.innerHTML = '&times;';
+    deleteBtn.title = 'Excluir este card';
+    deleteBtn.addEventListener('click', (e) => { 
+        e.stopPropagation(); 
+        deleteAnalysisProduct(product.id, product.name); 
+    });
+    
+    cardEl.append(titleEl, deleteBtn);
+    return cardEl;
+}
+
+async function deleteAnalysisProduct(productId, productName) {
+    if (confirm(`Tem certeza que deseja excluir o produto "${productName}"?`)) {
+        await deleteDoc(doc(db, 'analysis_products', productId));
+    }
+}
+
 function setupFormSubmit() {
     const form = document.getElementById('new-product-form');
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
         const name = form.querySelector('#product-name').value.trim();
         const description = form.querySelector('#product-desc').value.trim();
         const shopeeLink = form.querySelector('#product-shopee-link').value.trim();
         const driveLink = form.querySelector('#product-drive-link').value.trim();
 
-        // CORREÇÃO: Apenas o nome é obrigatório
         if (name) {
-            await addDoc(analysisProductsCollection, {
-                name,
-                description,
-                shopeeLink,
-                driveLink,
-                status: 'Pendente',
-                createdAt: new Date()
-            });
+            await addDoc(analysisProductsCollection, { name, description, shopeeLink, driveLink, status: 'Pendente', createdAt: new Date() });
             form.reset();
             alert('Produto adicionado para análise!');
         } else {
@@ -72,9 +132,13 @@ function setupFormSubmit() {
     });
 }
 
+let currentProduct = null;
+const modal = document.getElementById('product-modal');
+const decisionButtons = document.getElementById('modal-decision-buttons');
+const sendToBoardForm = document.getElementById('send-to-board-form');
+
 function openProductModal(product) {
     currentProduct = product;
-    
     document.getElementById('modal-product-name').textContent = product.name;
     document.getElementById('modal-product-shopee-link').href = product.shopeeLink || '#';
     const driveLinkEl = document.getElementById('modal-product-drive-link');
@@ -86,7 +150,6 @@ function openProductModal(product) {
         driveLinkEl.parentElement.style.display = 'none';
     }
     document.getElementById('modal-product-desc').textContent = product.description || 'Sem descrição.';
-
     if (product.status === 'Pendente') {
         decisionButtons.classList.remove('hidden');
         sendToBoardForm.classList.add('hidden');
@@ -98,59 +161,8 @@ function openProductModal(product) {
         decisionButtons.classList.add('hidden');
         sendToBoardForm.classList.add('hidden');
     }
-
     modal.classList.remove('hidden');
 }
-
-// O resto do seu analise.js (createProductCard, deleteAnalysisProduct, closeProductModal, etc.)
-// permanece exatamente como na versão anterior.
-// Vou colar o restante para garantir que esteja 100% completo.
-
-function setupRealtimeListener() {
-    const q = query(analysisProductsCollection, orderBy("createdAt", "desc"));
-    onSnapshot(q, snapshot => {
-        const pendenteContainer = document.getElementById('pendente-cards');
-        const aprovadoContainer = document.getElementById('aprovado-cards');
-        const reprovadoContainer = document.getElementById('reprovado-cards');
-        pendenteContainer.innerHTML = '';
-        aprovadoContainer.innerHTML = '';
-        reprovadoContainer.innerHTML = '';
-        snapshot.forEach(doc => {
-            const product = { id: doc.id, ...doc.data() };
-            const cardElement = createProductCard(product);
-            if (product.status === 'Aprovado') { aprovadoContainer.appendChild(cardElement); }
-            else if (product.status === 'Reprovado') { reprovadoContainer.appendChild(cardElement); }
-            else { pendenteContainer.appendChild(cardElement); }
-        });
-    });
-}
-
-function createProductCard(product) {
-    const cardEl = document.createElement('div');
-    cardEl.className = 'card';
-    cardEl.style.position = 'relative';
-    cardEl.addEventListener('click', () => openProductModal(product));
-    const titleEl = document.createElement('span');
-    titleEl.textContent = product.name;
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'card-delete-btn';
-    deleteBtn.innerHTML = '&times;';
-    deleteBtn.title = 'Excluir este card';
-    deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteAnalysisProduct(product.id, product.name); });
-    cardEl.append(titleEl, deleteBtn);
-    return cardEl;
-}
-
-async function deleteAnalysisProduct(productId, productName) {
-    if (confirm(`Tem certeza que deseja excluir o produto "${productName}"?`)) {
-        await deleteDoc(doc(db, 'analysis_products', productId));
-    }
-}
-
-let currentProduct = null;
-const modal = document.getElementById('product-modal');
-const decisionButtons = document.getElementById('modal-decision-buttons');
-const sendToBoardForm = document.getElementById('send-to-board-form');
 
 function closeProductModal() { modal.classList.add('hidden'); currentProduct = null; }
 async function approveCurrentProduct() {
