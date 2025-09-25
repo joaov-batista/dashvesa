@@ -154,9 +154,9 @@ body {
 #observations-panel { position: fixed; top: 0; right: 0; width: 320px; height: 100vh; background-color: var(--floating-bg); backdrop-filter: blur(10px); border-left: 1px solid var(--border-color); box-shadow: -5px 0 15px var(--shadow-color); z-index: 1500; transform: translateX(100%); transition: transform 0.3s ease; }
 #observations-panel.open { transform: translateX(0); }
 .obs-content { padding: 1.5rem; display: flex; flex-direction: column; height: 100%; }
-.obs-header { display: flex; justify-content: space-between; align-items: center; }
-#obs-list { flex-grow: 1; overflow-y: auto; margin: 1rem 0; }
-.obs-item { background: var(--card-bg); padding: 0.8rem; border-radius: 6px; margin-bottom: 0.8rem; }
+.obs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+#obs-list { flex-grow: 1; overflow-y: auto; margin-bottom: 1rem; }
+.obs-item { background: var(--card-bg); padding: 0.8rem 1rem; border-radius: 6px; margin-bottom: 0.8rem; border-left: 3px solid var(--border-color); }
 .obs-item p { word-break: break-word; white-space: pre-wrap; line-height: 1.4; }
 .obs-meta { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem; opacity: 0.7; }
 #obs-form button[type="submit"] { background-image: linear-gradient(to right, var(--accent-color) 0%, var(--accent-color-darker) 100%); border: none; border-radius: 6px; padding: 0.8rem; color: white; font-weight: 500; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 100%; }
@@ -167,6 +167,13 @@ body {
 .obs-action-btn:hover { color: var(--accent-color); }
 .obs-action-btn.delete:hover { color: var(--status-urgente); }
 .obs-edit-textarea { width: 100%; margin-bottom: 0.5rem; }
+
+.obs-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color); }
+.acknowledgment-list { font-size: 0.75rem; color: var(--text-secondary); }
+.acknowledgment-list span { background-color: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
+.acknowledge-btn { background: none; border: 1px solid var(--accent-color); color: var(--accent-color); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }
+.acknowledge-btn:hover { background-color: var(--accent-color); color: white; }
+.acknowledge-btn.acknowledged { background-color: var(--status-concluida); border-color: var(--status-concluida); color: white; cursor: default; }
 
 ::-webkit-scrollbar { width: 12px; height: 12px; }
 ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
