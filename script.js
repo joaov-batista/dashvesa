@@ -1,8 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, orderBy, writeBatch, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, orderBy, writeBatch, serverTimestamp, getDocs, arrayUnion } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-// --- CONFIGURAÇÃO DO FIREBASE ---
 const firebaseConfig = {
     apiKey: "AIzaSyDpxhNK75nZAR9l2HK4R3CsyQTurNzf40w",
     authDomain: "vespadash-d6d59.firebaseapp.com",
@@ -13,12 +12,10 @@ const firebaseConfig = {
     measurementId: "G-RREY691L75"
 };
 
-// --- INICIALIZAÇÃO ---
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- REFERÊNCIAS DO DOM ---
 const authContainer = document.getElementById('auth-container');
 const appWrapper = document.getElementById('app-wrapper');
 const sidebar = document.getElementById('sidebar');
@@ -28,7 +25,6 @@ const boardContainer = document.getElementById('boardContainer');
 const inboxForm = document.getElementById('inbox-form');
 const inboxCardsContainer = document.getElementById('inbox-cards-container');
 const logoutButton = document.getElementById('logout-button');
-const dashboardTitle = document.getElementById('dashboard-title');
 const filterContainer = document.querySelector('.filter-container');
 const modal = document.getElementById('card-modal');
 const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -42,26 +38,13 @@ const obsForm = document.getElementById('obs-form');
 const obsInput = document.getElementById('obs-input');
 const obsCloseBtn = document.getElementById('obs-close-btn');
 
-// --- ESTADO LOCAL E CACHE ---
-let localState = JSON.parse(localStorage.getItem('taskflowLocalState')) || {
-    sidebarWidth: 300,
-    sidebarCollapsed: false,
-    activeFilter: 'all'
-};
-let cachedLists = [];
-let cachedCards = [];
-let currentEditingCard = null;
-let draggedItem = null;
-
+let localState = JSON.parse(localStorage.getItem('taskflowLocalState')) || { sidebarWidth: 300, sidebarCollapsed: false, activeFilter: 'all' };
+let cachedLists = [], cachedCards = [], currentEditingCard = null, draggedItem = null;
 const listColors = ['green', 'blue', 'yellow'];
 const STATUSES = { pendente: 'Pendente', 'em-andamento': 'Em Andamento', concluida: 'Concluída', urgente: 'Urgente' };
 
-// --- FUNÇÕES DE ESTADO LOCAL ---
-function saveLocalState() {
-    localStorage.setItem('taskflowLocalState', JSON.stringify(localState));
-}
+function saveLocalState() { localStorage.setItem('taskflowLocalState', JSON.stringify(localState)); }
 
-// --- AUTENTICAÇÃO ---
 onAuthStateChanged(auth, user => {
     if (user) {
         authContainer.classList.add('hidden');
@@ -75,15 +58,8 @@ onAuthStateChanged(auth, user => {
         const navMenuBtn = document.getElementById('nav-menu-btn');
         const navDropdown = document.getElementById('nav-dropdown');
         if (navMenuBtn && navDropdown) {
-            navMenuBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                navDropdown.classList.toggle('hidden');
-            });
-            document.addEventListener('click', () => {
-                if (!navDropdown.classList.contains('hidden')) {
-                    navDropdown.classList.add('hidden');
-                }
-            });
+            navMenuBtn.addEventListener('click', (e) => { e.stopPropagation(); navDropdown.classList.toggle('hidden'); });
+            document.addEventListener('click', () => { if (!navDropdown.classList.contains('hidden')) navDropdown.classList.add('hidden'); });
         }
     } else {
         authContainer.classList.remove('hidden');
@@ -98,19 +74,15 @@ document.getElementById('register-form').addEventListener('submit', async e => {
 document.getElementById('toggle-auth-mode').addEventListener('click', () => { document.getElementById('login-form').classList.toggle('hidden'); document.getElementById('register-form').classList.toggle('hidden'); });
 logoutButton.addEventListener('click', () => signOut(auth));
 
-
-// --- LISTENERS DE DADOS EM TEMPO REAL ---
 let unsubscribeLists, unsubscribeCards;
 function setupRealtimeListeners() {
     if (unsubscribeLists) unsubscribeLists();
     if (unsubscribeCards) unsubscribeCards();
-
     const listsQuery = query(collection(db, 'lists'), orderBy('order'));
     unsubscribeLists = onSnapshot(listsQuery, listSnapshot => {
         cachedLists = listSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderAll();
     });
-
     const cardsQuery = query(collection(db, 'cards'));
     unsubscribeCards = onSnapshot(cardsQuery, cardSnapshot => {
         cachedCards = cardSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -118,7 +90,6 @@ function setupRealtimeListeners() {
     });
 }
 
-// --- RENDERIZAÇÃO GERAL ---
 function renderAll() {
     appWrapper.classList.toggle('sidebar-collapsed', localState.sidebarCollapsed);
     toggleSidebarBtn.textContent = localState.sidebarCollapsed ? '»' : '«';
@@ -139,14 +110,12 @@ function renderBoard() {
     boardContainer.appendChild(createAddListElement());
 }
 
-// --- CRIAÇÃO DE ELEMENTOS ---
 function createListElement(list, index) {
     const listEl = document.createElement('div');
     listEl.className = 'list';
     listEl.dataset.listId = list.id;
     listEl.dataset.color = listColors[index % listColors.length];
     listEl.draggable = true;
-    
     const header = document.createElement('div');
     header.className = 'list-header';
     const titleEl = document.createElement('h3');
@@ -157,11 +126,9 @@ function createListElement(list, index) {
     deleteBtn.className = 'delete-list-btn';
     deleteBtn.innerHTML = '&times;';
     header.append(titleEl, deleteBtn);
-    
     const cardsContainer = document.createElement('div');
     cardsContainer.className = 'cards-container';
     cachedCards.filter(c => c.listId === list.id).sort((a,b) => (a.order || 0) - (b.order || 0)).forEach(card => cardsContainer.appendChild(createCardElement(card)));
-    
     listEl.addEventListener('dragstart', e => { e.stopPropagation(); draggedItem = { listId: list.id, type: 'list' }; setTimeout(() => listEl.classList.add('dragging-list'), 0); });
     listEl.addEventListener('dragend', e => listEl.classList.remove('dragging-list'));
     listEl.addEventListener('dragover', e => { e.preventDefault(); e.currentTarget.classList.add('drag-over-list'); });
@@ -173,11 +140,9 @@ function createListElement(list, index) {
         if (draggedItem.type === 'list' && draggedItem.listId !== list.id) { reorderLists(draggedItem.listId, list.id); }
         else if (draggedItem.type === 'card' && draggedItem.listId !== list.id) { updateDoc(doc(db, 'cards', draggedItem.cardId), { listId: list.id }); }
     });
-
     titleEl.addEventListener('blur', () => updateDoc(doc(db, 'lists', list.id), { name: titleEl.textContent.trim() }));
     titleEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
     deleteBtn.addEventListener('click', () => deleteList(list.id));
-
     listEl.append(header, cardsContainer);
     return listEl;
 }
@@ -304,7 +269,6 @@ saveModalBtn.addEventListener('click', saveCardChanges);
 deleteCardBtn.addEventListener('click', deleteCard);
 modalCloseBtn.addEventListener('click', closeCardModal);
 filterContainer.addEventListener('click', e => { if (e.target.matches('.filter-btn')) applyFilter(e.target.dataset.filter); });
-
 inboxForm.addEventListener('submit', async e => {
     e.preventDefault();
     const title = e.target.querySelector('#inbox-title').value.trim();
@@ -344,7 +308,7 @@ function setupObservations(user) {
         e.preventDefault();
         const text = obsInput.value.trim();
         if (text) {
-            await addDoc(obsCollection, { text, author: user.email, uid: user.uid, timestamp: serverTimestamp(), readBy: [user.uid] });
+            await addDoc(obsCollection, { text, author: user.email, uid: user.uid, timestamp: serverTimestamp(), readBy: [user.uid], acknowledgments: [] });
             obsInput.value = '';
         }
     });
@@ -359,9 +323,37 @@ function createObsItem(obs, user) {
     const metaEl = document.createElement('div');
     metaEl.className = 'obs-meta';
     const date = obs.timestamp ? obs.timestamp.toDate().toLocaleString('pt-BR') : 'Enviando...';
-    metaEl.textContent = `Por: ${obs.author} - ${date}`;
-    item.append(textEl, metaEl);
-
+    metaEl.textContent = `Por: ${obs.author.split('@')[0]} - ${date}`;
+    const footerEl = document.createElement('div');
+    footerEl.className = 'obs-footer';
+    const ackListEl = document.createElement('div');
+    ackListEl.className = 'acknowledgment-list';
+    if (obs.acknowledgments && obs.acknowledgments.length > 0) {
+        ackListEl.innerHTML = `Visto por: `;
+        obs.acknowledgments.forEach(ack => {
+            const ackSpan = document.createElement('span');
+            ackSpan.textContent = ack.email.split('@')[0];
+            ackListEl.appendChild(ackSpan);
+        });
+    }
+    footerEl.appendChild(ackListEl);
+    const hasAcknowledged = obs.acknowledgments && obs.acknowledgments.some(ack => ack.uid === user.uid);
+    if (user.uid !== obs.uid) {
+        const ackBtn = document.createElement('button');
+        ackBtn.textContent = hasAcknowledged ? '✔ Visualizado' : 'Marcar como visto';
+        ackBtn.className = 'acknowledge-btn';
+        if(hasAcknowledged) {
+            ackBtn.classList.add('acknowledged');
+            ackBtn.disabled = true;
+        }
+        ackBtn.addEventListener('click', () => {
+            if (!hasAcknowledged) {
+                acknowledgeObservation(obs.id, user);
+            }
+        });
+        footerEl.appendChild(ackBtn);
+    }
+    item.append(textEl, metaEl, footerEl);
     if (user.uid === obs.uid) {
         const actionsEl = document.createElement('div');
         actionsEl.className = 'obs-actions';
@@ -372,20 +364,19 @@ function createObsItem(obs, user) {
         deleteBtn.className = 'obs-action-btn delete';
         deleteBtn.textContent = 'Excluir';
         actionsEl.append(editBtn, deleteBtn);
-        item.appendChild(actionsEl);
-
+        // Insere as ações antes do rodapé
+        item.insertBefore(actionsEl, footerEl);
         deleteBtn.addEventListener('click', () => {
             deleteObservation(obs.id);
         });
-
         editBtn.addEventListener('click', () => {
-            enterEditMode(item, textEl, actionsEl);
+            enterEditMode(item, textEl, actionsEl, footerEl);
         });
     }
     return item;
 }
 
-function enterEditMode(item, textEl, actionsEl) {
+function enterEditMode(item, textEl, actionsEl, footerEl) {
     const originalText = textEl.textContent;
     const editTextArea = document.createElement('textarea');
     editTextArea.value = originalText;
@@ -400,19 +391,18 @@ function enterEditMode(item, textEl, actionsEl) {
     const editActions = document.createElement('div');
     editActions.className = 'obs-actions';
     editActions.append(saveBtn, cancelBtn);
-
     textEl.classList.add('hidden');
     actionsEl.classList.add('hidden');
+    footerEl.classList.add('hidden');
     item.insertBefore(editTextArea, actionsEl);
     item.insertBefore(editActions, actionsEl);
-
     cancelBtn.addEventListener('click', () => {
         item.removeChild(editTextArea);
         item.removeChild(editActions);
         textEl.classList.remove('hidden');
         actionsEl.classList.remove('hidden');
+        footerEl.classList.remove('hidden');
     });
-
     saveBtn.addEventListener('click', async () => {
         const newText = editTextArea.value.trim();
         if (newText && newText !== originalText) {
@@ -427,6 +417,16 @@ async function deleteObservation(obsId) {
     if (confirm("Tem certeza que deseja excluir esta observação?")) {
         await deleteDoc(doc(db, 'observations', obsId));
     }
+}
+
+async function acknowledgeObservation(obsId, user) {
+    const obsRef = doc(db, 'observations', obsId);
+    await updateDoc(obsRef, {
+        acknowledgments: arrayUnion({
+            uid: user.uid,
+            email: user.email
+        })
+    });
 }
 
 async function markAllObsAsRead(userId) {
